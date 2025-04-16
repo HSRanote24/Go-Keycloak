@@ -22,8 +22,10 @@ type UserHandler struct {
 
 func (h *UserHandler) HandleLogin(c *fiber.Ctx) error {
 	type LoginRequest struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
+		Username  string `json:"username"`
+		Password  string `json:"password"`
+		FirstName string `json:"firstname"`
+		LastName  string `json:"lastname"`
 	}
 	var loginReq LoginRequest
 	if err := c.BodyParser(&loginReq); err != nil {
@@ -69,7 +71,7 @@ func (h *UserHandler) HandleLogin(c *fiber.Ctx) error {
 	user, err := services.GetUserByUsername(loginReq.Username)
 	if err != nil || user == nil {
 		// Create user in Cassandra
-		user = &models.User{Username: loginReq.Username}
+		user = &models.User{Username: loginReq.Username, FirstName: loginReq.FirstName, LastName: loginReq.LastName}
 		if err := services.CreateUser(user); err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to create user in Cassandra"})
 		}
@@ -80,9 +82,11 @@ func (h *UserHandler) HandleLogin(c *fiber.Ctx) error {
 
 func (h *UserHandler) HandleUserCreation(c *fiber.Ctx) error {
 	type UserCreationRequest struct {
-		Username string `json:"username" validate:"required,min=3,max=32"`
-		Password string `json:"password" validate:"required,min=6"`
-		Email    string `json:"email" validate:"required,email"`
+		Username  string `json:"username" validate:"required,min=3,max=32"`
+		Password  string `json:"password" validate:"required,min=6"`
+		Email     string `json:"email" validate:"required,email"`
+		FirstName string `json:"firstname" validate:"required,min=1,max=50"`
+		LastName  string `json:"lastname" validate:"required,min=1,max=50"`
 	}
 	var userReq UserCreationRequest
 	if err := c.BodyParser(&userReq); err != nil {
@@ -106,9 +110,11 @@ func (h *UserHandler) HandleUserCreation(c *fiber.Ctx) error {
 	usersURL := keycloakBaseURL + "/admin/realms/" + realm + "/users"
 
 	userBody := map[string]interface{}{
-		"username": userReq.Username,
-		"email":    userReq.Email,
-		"enabled":  true,
+		"username":  userReq.Username,
+		"email":     userReq.Email,
+		"enabled":   true,
+		"firstName": userReq.FirstName,
+		"lastName":  userReq.LastName,
 		"credentials": []map[string]interface{}{
 			{"type": "password", "value": userReq.Password, "temporary": false},
 		},
@@ -135,7 +141,7 @@ func (h *UserHandler) HandleUserCreation(c *fiber.Ctx) error {
 	}
 
 	// Create user in Cassandra
-	user := &models.User{Username: userReq.Username, Email: userReq.Email}
+	user := &models.User{Username: userReq.Username, Email: userReq.Email, FirstName: userReq.FirstName, LastName: userReq.LastName}
 	if err := services.CreateUser(user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "User created in Keycloak but failed in Cassandra"})
 	}
