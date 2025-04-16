@@ -11,6 +11,7 @@ import (
 	"go-keycloack/models"
 	"go-keycloack/services"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gocql/gocql"
 	"github.com/gofiber/fiber/v2"
 )
@@ -79,13 +80,19 @@ func (h *UserHandler) HandleLogin(c *fiber.Ctx) error {
 
 func (h *UserHandler) HandleUserCreation(c *fiber.Ctx) error {
 	type UserCreationRequest struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Email    string `json:"email"`
+		Username string `json:"username" validate:"required,min=3,max=32"`
+		Password string `json:"password" validate:"required,min=6"`
+		Email    string `json:"email" validate:"required,email"`
 	}
 	var userReq UserCreationRequest
 	if err := c.BodyParser(&userReq); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid request payload"})
+	}
+
+	// Validate input
+	validate := validator.New()
+	if err := validate.Struct(userReq); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	// Get admin token for Keycloak
@@ -209,6 +216,13 @@ func (h *UserHandler) HandleDeleteUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid UUID"})
 	}
+
+	// Check if user exists first
+	user, err := services.GetUserByID(id)
+	if err != nil || user == nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+	}
+
 	if err := services.DeleteUser(id); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Delete failed"})
 	}
