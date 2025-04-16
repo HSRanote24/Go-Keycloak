@@ -1,6 +1,9 @@
 package utils
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,4 +25,21 @@ func ExtractAndValidateBearerToken(c *fiber.Ctx) (string, error) {
 		return "", fiber.NewError(fiber.StatusUnauthorized, "Malformed JWT token. Ensure the token is correctly generated.")
 	}
 	return tokenParts[1], nil
+}
+
+// ParseJWT parses a JWT token string and returns its claims as a map.
+func ParseJWT(token string) (map[string]interface{}, error) {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil, errors.New("invalid JWT format")
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, err
+	}
+	var claims map[string]interface{}
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return nil, err
+	}
+	return claims, nil
 }

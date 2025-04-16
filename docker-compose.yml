@@ -10,6 +10,13 @@ services:
     volumes:
       - cassandra_data:/var/lib/cassandra
 
+  valkey:
+    image: valkey/valkey:latest
+    container_name: valkey
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   api:
     build: .
     container_name: go-keycloack-app
@@ -17,8 +24,10 @@ services:
       - "3000:3000"
     depends_on:
       - cassandra
+      - valkey
     environment:
       - CASSANDRA_HOST=cassandra
+      - VALKEY_HOST=valkey
     restart: unless-stopped
 
 volumes:

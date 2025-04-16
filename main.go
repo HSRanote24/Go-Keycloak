@@ -18,7 +18,11 @@ func main() {
 	config.InitCassandra()
 	defer config.Session.Close()
 
+	middleware.InitValkey() // Initialize Valkey (Redis-compatible) connection
+
 	app := fiber.New()
+
+	app.Use(middleware.RateLimitAll()) // Apply rate limiting to all routes
 
 	userHandler := &handlers.UserHandler{}
 
