@@ -1,7 +1,9 @@
 package main
 
 import (
+	"go-keycloack/config"
 	"go-keycloack/handlers"
+	"go-keycloack/middleware"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,13 +15,23 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
+	config.InitCassandra()
+	defer config.Session.Close()
+
 	app := fiber.New()
 
-	loginHandler := &handlers.LoginHandler{}
-	userCreationHandler := &handlers.UserCreationHandler{}
+	userHandler := &handlers.UserHandler{}
 
-	app.Post("/login", loginHandler.HandleLogin)
-	app.Post("/users", userCreationHandler.HandleUserCreation)
+	// Public endpoints
+	app.Post("/login", userHandler.HandleLogin)
+	app.Post("/users", userHandler.HandleUserCreation)
+
+	// Protected endpoints
+	app.Use(middleware.KeycloakAuthMiddleware())
+	app.Get("/users", userHandler.HandleGetAllUsers)
+	app.Get("/users/:id", userHandler.HandleGetUser)
+	app.Put("/users/:id", userHandler.HandleUpdateUser)
+	app.Delete("/users/:id", userHandler.HandleDeleteUser)
 
 	if err := app.Listen(":3000"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)

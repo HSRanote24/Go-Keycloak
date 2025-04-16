@@ -1,0 +1,25 @@
+services:
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: dev-cluster
+      CASSANDRA_DC: dc1
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+
+  api:
+    build: .
+    container_name: go-keycloack-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - cassandra
+    environment:
+      - CASSANDRA_HOST=cassandra
+    restart: unless-stopped
+
+volumes:
+  cassandra_data:

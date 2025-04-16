@@ -27,7 +27,7 @@ func (h *LoginHandler) HandleLogin(c *fiber.Ctx) error {
 	}
 
 	keycloakBaseURL := os.Getenv("KEYCLOAK_BASE_URL")
-	if keycloakBaseURL[len(keycloakBaseURL)-1] == '/' {
+	if len(keycloakBaseURL) > 0 && keycloakBaseURL[len(keycloakBaseURL)-1] == '/' {
 		keycloakBaseURL = keycloakBaseURL[:len(keycloakBaseURL)-1]
 	}
 
