@@ -3,7 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -53,7 +53,7 @@ func (h *LoginHandler) HandleLogin(c *fiber.Ctx) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Keycloak error: " + string(body),
 		})
@@ -70,7 +70,7 @@ func (h *LoginHandler) HandleLogin(c *fiber.Ctx) error {
 }
 
 func parseResponseBody(resp *http.Response) (map[string]interface{}, error) {
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

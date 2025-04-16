@@ -3,7 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -58,7 +58,7 @@ func (h *UserHandler) HandleLogin(c *fiber.Ctx) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Keycloak error: " + string(body)})
 	}
 
@@ -136,7 +136,7 @@ func (h *UserHandler) HandleUserCreation(c *fiber.Ctx) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Failed to create user in Keycloak: " + string(body)})
 	}
 
@@ -173,7 +173,7 @@ func getKeycloakAdminToken() (string, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return "", fiber.NewError(fiber.StatusUnauthorized, string(body))
 	}
 	var tokenResp map[string]interface{}
