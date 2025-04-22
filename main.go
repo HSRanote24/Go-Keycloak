@@ -30,6 +30,11 @@ func main() {
 	app.Post("/login", userHandler.HandleLogin)
 	app.Post("/users", userHandler.HandleUserCreation)
 
+	// Credential endpoints (public)
+	app.Post("/onboard/issuer", handlers.OnboardIssuerFiber)
+	app.Post("/issue/credential", handlers.IssueCredentialFiber)
+	app.Post("/verify/credential", handlers.VerifyCredentialFiber)
+
 	// Protected endpoints
 	app.Use(middleware.KeycloakAuthMiddleware())
 	app.Get("/users", userHandler.HandleGetAllUsers)
